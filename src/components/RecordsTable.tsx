@@ -38,7 +38,6 @@ const RecordsTable: React.FC = () => {
   const lastDocRef = useRef<any>(null);
 
   useEffect(() => {
-    // Carregar apenas os 100 registros mais recentes inicialmente
     const q = query(
       collection(db, 'records'),
       orderBy('id', 'desc'),
@@ -105,6 +104,11 @@ const RecordsTable: React.FC = () => {
     }
     setCurrentPage(1);
   }, [searchTerm, records]);
+
+  const handleNumberInput = (value: string): string => {
+    // Remove leading zeros and non-numeric characters
+    return value.replace(/^0+(\d)/, '$1').replace(/[^\d]/g, '');
+  };
 
   const handleUpdateUsedLabels = async (id: number, value: number) => {
     if (updateTimeoutRef.current) {
@@ -300,7 +304,7 @@ const RecordsTable: React.FC = () => {
               <th className="w-24 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Lote</th>
               <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Total<br/>Peças</th>
               <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Peças por<br/>Embalagem</th>
-              <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Embalagem<br/> por Palete</th>
+              <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Embalagem<br/>por Palete</th>
               <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Peças<br/>Extras</th>
               <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Etiquetas<br/>Necessárias</th>
               <th className="w-20 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-200/20">Etiquetas<br/>Usadas</th>
@@ -341,7 +345,7 @@ const RecordsTable: React.FC = () => {
                 </td>
                 <td className="px-2 py-2 text-sm border-r border-gray-200/10">
                   <input
-                    type="number"
+                    type="text"
                     value={record.usedLabels}
                     min="0"
                     max={record.totalLabels}
@@ -351,21 +355,19 @@ const RecordsTable: React.FC = () => {
                     onFocus={() => { isTypingRef.current = true; }}
                     onBlur={(e) => {
                       isTypingRef.current = false;
-                      let value = Number(e.target.value);
-                      if (value > record.totalLabels) {
-                        value = record.totalLabels;
-                      }
-                      handleUpdateUsedLabels(record.id, value);
+                      const cleanValue = handleNumberInput(e.target.value);
+                      const numValue = parseInt(cleanValue || '0', 10);
+                      const finalValue = Math.min(numValue, record.totalLabels);
+                      handleUpdateUsedLabels(record.id, finalValue);
                     }}
                     onChange={(e) => {
-                      let value = Number(e.target.value);
-                      if (value > record.totalLabels) {
-                        value = record.totalLabels;
-                      }
+                      const cleanValue = handleNumberInput(e.target.value);
+                      const numValue = parseInt(cleanValue || '0', 10);
+                      const finalValue = Math.min(numValue, record.totalLabels);
                       const newRecords = [...records];
                       const recordIndex = newRecords.findIndex(r => r.id === record.id);
                       if (recordIndex !== -1) {
-                        newRecords[recordIndex].usedLabels = value;
+                        newRecords[recordIndex].usedLabels = finalValue;
                         setRecords(newRecords);
                       }
                     }}
@@ -466,9 +468,13 @@ const RecordsTable: React.FC = () => {
                 <div>
                   <label className="block mb-1 text-sm font-medium">Etiquetas Necessárias</label>
                   <input
-                    type="number"
+                    type="text"
                     value={editingTotalLabels}
-                    onChange={(e) => setEditingTotalLabels(Number(e.target.value))}
+                    onChange={(e) => {
+                      const cleanValue = handleNumberInput(e.target.value);
+                      setEditingTotalLabels(parseInt(cleanValue || '0', 10));
+                    }}
+                    min="0"
                     className={`w-full p-2 rounded-md ${
                       darkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'
                     }`}
@@ -477,9 +483,14 @@ const RecordsTable: React.FC = () => {
                 <div>
                   <label className="block mb-1 text-sm font-medium">Peças Extras</label>
                   <input
-                    type="number"
+                    type="text"
                     value={editingExtraPieces}
-                    onChange={(e) => setEditingExtraPieces(Number(e.target.value))}
+                    onChange={(e) => {
+                      const cleanValue = handleNumberInput(e.target.value);
+                      const numValue = parseInt(cleanValue || '0', 10);
+                      const maxValue = editingRecord.piecesPerPackage - 1;
+                      setEditingExtraPieces(Math.min(numValue, maxValue));
+                    }}
                     min="0"
                     max={editingRecord.piecesPerPackage - 1}
                     className={`w-full p-2 rounded-md ${
