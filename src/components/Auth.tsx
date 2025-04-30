@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import { auth, db } from '../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const { darkMode } = useTheme();
@@ -11,6 +12,7 @@ const Auth: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +62,7 @@ const Auth: React.FC = () => {
       // Add to pending users
       await setDoc(doc(collection(db, 'pendingUsers')), {
         email,
-        password, // In production, use proper password hashing
+        password,
         requestDate: new Date().toISOString(),
         status: 'pending'
       });
@@ -123,19 +125,26 @@ const Auth: React.FC = () => {
               required
             />
           </div>
-          <div>
+          <div className="relative">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Senha"
-              className={`w-full p-3 rounded-lg ${
+              className={`w-full p-3 pr-10 rounded-lg ${
                 darkMode 
                   ? 'bg-gray-700 text-white placeholder-gray-400' 
                   : 'bg-white text-gray-900 placeholder-gray-500'
               } border border-gray-300`}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none`}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button

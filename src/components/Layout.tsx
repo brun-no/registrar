@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
-import { ArrowUp, Shield } from 'lucide-react';
+import { ArrowUp, Menu } from 'lucide-react';
 import { realtimeDb, auth } from '../services/firebase';
 import { ref, onValue } from 'firebase/database';
 import { signOut } from 'firebase/auth';
+import Navigation from './Navigation';
 
 interface LayoutProps {
   children: React.ReactNode;
-  isAdmin: boolean;
-  onToggleAdminPanel: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, isAdmin, onToggleAdminPanel }) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { darkMode } = useTheme();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,6 +41,19 @@ const Layout: React.FC<LayoutProps> = ({ children, isAdmin, onToggleAdminPanel }
     return () => unsubscribe();
   }, []);
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.menu-container') && !target.closest('.menu-button')) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -58,24 +71,21 @@ const Layout: React.FC<LayoutProps> = ({ children, isAdmin, onToggleAdminPanel }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-800'}`}>
-      <header className="py-4 px-6 flex justify-between items-center">
-        <div className="flex items-center">
-          <h1 id="editableTitle" contentEditable="true" className="text-xl font-semibold cursor-text">
+      <header className={`py-4 px-6 flex justify-between items-center relative ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-md`}>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className={`menu-button p-2 rounded-lg transition-colors duration-200 ${
+              darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
+          >
+            <Menu size={24} />
+          </button>
+          <h1 className="text-xl font-semibold">
             Qualidade Uptec Brasil
           </h1>
         </div>
         <div className="flex items-center space-x-4">
-          {isAdmin && (
-            <button
-              onClick={onToggleAdminPanel}
-              className={`px-3 py-1 rounded-md text-xs flex items-center space-x-1 ${
-                darkMode ? 'bg-purple-600' : 'bg-purple-500'
-              } text-white hover:opacity-90 transition-opacity`}
-            >
-              <Shield size={14} />
-              <span>ADMIN</span>
-            </button>
-          )}
           <button
             onClick={() => setShowLogoutModal(true)}
             className={`px-3 py-1 rounded-md text-xs flex items-center ${
@@ -86,9 +96,17 @@ const Layout: React.FC<LayoutProps> = ({ children, isAdmin, onToggleAdminPanel }
           </button>
           <ThemeToggle />
         </div>
+        {showMenu && (
+          <div className="menu-container absolute top-full left-0 mt-1 z-50">
+            <Navigation currentPage="home" onPageChange={(page) => {
+              setShowMenu(false);
+              window.dispatchEvent(new CustomEvent('navigationChange', { detail: page }));
+            }} />
+          </div>
+        )}
       </header>
 
-      <main className="container mx-auto py-6 px-4 max-w-6xl">
+      <main className="container mx-auto py-6 px-4">
         {children}
       </main>
 

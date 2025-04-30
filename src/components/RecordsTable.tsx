@@ -16,7 +16,7 @@ interface Record {
   totalLabels: number;
   usedLabels: number;
   notes: string;
-}
+} 
 
 const RecordsTable: React.FC = () => {
   const { darkMode } = useTheme();
