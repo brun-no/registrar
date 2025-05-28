@@ -9,6 +9,7 @@ const PasswordManager: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [defaultPage, setDefaultPage] = useState('home');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -16,19 +17,20 @@ const PasswordManager: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    const loadCurrentPassword = async () => {
+    const loadSettings = async () => {
       try {
         const passwordDoc = await getDoc(doc(db, 'SenhaAdmin', 'SenhaAdmin'));
         if (passwordDoc.exists()) {
           setCurrentPassword(passwordDoc.data().SenhaAdmin || '');
+          setDefaultPage(passwordDoc.data().defaultPage || 'home');
         }
       } catch (error) {
-        console.error('Error loading password:', error);
-        setError('Erro ao carregar a senha atual');
+        console.error('Error loading settings:', error);
+        setError('Erro ao carregar as configurações');
       }
     };
 
-    loadCurrentPassword();
+    loadSettings();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,14 +57,55 @@ const PasswordManager: React.FC = () => {
     }
   };
 
+  const handleDefaultPageChange = async (page: string) => {
+    try {
+      await updateDoc(doc(db, 'SenhaAdmin', 'SenhaAdmin'), {
+        defaultPage: page
+      });
+      setDefaultPage(page);
+      setSuccess('Página padrão atualizada com sucesso');
+    } catch (error) {
+      console.error('Error updating default page:', error);
+      setError('Erro ao atualizar a página padrão');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-md">
       <div className={`p-6 rounded-lg shadow-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="flex items-center mb-6">
           <Key size={24} className="mr-2" />
           <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-            Gerenciar Senha de Administrador
+            Configurações de Administrador
           </h2>
+        </div>
+
+        <div className="mb-8">
+          <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+            Página Inicial Padrão
+          </h3>
+          <div className="flex gap-4">
+            <button
+              onClick={() => handleDefaultPageChange('home')}
+              className={`flex-1 py-2 px-4 rounded-md transition-colors duration-200 ${
+                defaultPage === 'home'
+                  ? 'bg-blue-500 text-white'
+                  : `${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`
+              }`}
+            >
+              Registros
+            </button>
+            <button
+              onClick={() => handleDefaultPageChange('calculator')}
+              className={`flex-1 py-2 px-4 rounded-md transition-colors duration-200 ${
+                defaultPage === 'calculator'
+                  ? 'bg-blue-500 text-white'
+                  : `${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`
+              }`}
+            >
+              Calculadora
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

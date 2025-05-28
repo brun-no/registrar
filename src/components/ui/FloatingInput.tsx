@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
 interface FloatingInputProps {
@@ -15,7 +15,7 @@ interface FloatingInputProps {
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-export const FloatingInput: React.FC<FloatingInputProps> = ({
+export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(({
   id,
   value,
   onChange,
@@ -27,13 +27,14 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
   readOnly = false,
   className = '',
   onKeyPress
-}) => {
+}, ref) => {
   const { darkMode } = useTheme();
   const isNotEmpty = value !== '' && value !== 0;
 
   return (
     <div className="relative">
       <input
+        ref={ref}
         id={id}
         name={id}
         type={type}
@@ -81,4 +82,6 @@ export const FloatingInput: React.FC<FloatingInputProps> = ({
       </label>
     </div>
   );
-};
+});
+
+FloatingInput.displayName = 'FloatingInput';

@@ -3,9 +3,6 @@ interface CalculationResult {
   completeLabels: number;
   extraLabels: number;
   extraPieces: number;
-  totalPallets: number;
-  completePallets: number;
-  extraPackages: number;
   detailedCalculation: string;
 }
 
@@ -21,28 +18,30 @@ export function calculateLabels(
   // If there are extra pieces, we need one more label
   const extraLabels = extraPieces > 0 ? 1 : 0;
   const totalLabels = completeLabels + extraLabels;
-  
-  // Calculate pallets
-  const completePallets = Math.floor(totalLabels / packagesPerPallet);
-  const extraPackages = totalLabels % packagesPerPallet;
-  const totalPallets = extraPackages > 0 ? completePallets + 1 : completePallets;
 
-  // Generate detailed calculation explanation
-  const detailedCalculation = `
-Total de Peças: ${totalPieces}
+  // Generate detailed calculation explanation for Calculator page
+  const detailedCalculation = packagesPerPallet === 1 
+    ? `Total de Peças: ${totalPieces}
+Peças por Embalagem: ${piecesPerPackage}
+
+Matemática detalhada:
+${totalPieces} / ${piecesPerPackage} = ${completeLabels} embalagens${extraPieces > 0 ? ` (sobram ${extraPieces} peças)` : ''}
+
+${totalPieces} peças distribuídas em ${totalLabels} embalagens`
+    : `Total de Peças: ${totalPieces}
 Peças por Embalagem: ${piecesPerPackage}
 Embalagens por Palete: ${packagesPerPallet}
 
 Matemática detalhada:
 ${totalPieces} / ${piecesPerPackage} = ${completeLabels} embalagens${extraPieces > 0 ? ` (sobram ${extraPieces} peças)` : ''}
 
-${completeLabels} / ${packagesPerPallet} = ${completePallets} paletes completos${extraPackages > 0 ? ` (sobram ${extraPackages} embalagens)` : ''}
+${completeLabels} / ${packagesPerPallet} = ${Math.floor(completeLabels / packagesPerPallet)} paletes completos${completeLabels % packagesPerPallet > 0 ? ` (sobram ${completeLabels % packagesPerPallet} embalagens)` : ''}
 
-${packagesPerPallet} * ${completePallets} = ${packagesPerPallet * completePallets} embalagens em paletes completos
+${packagesPerPallet} * ${Math.floor(completeLabels / packagesPerPallet)} = ${packagesPerPallet * Math.floor(completeLabels / packagesPerPallet)} embalagens em paletes completos
 
-${completeLabels} - ${packagesPerPallet * completePallets} = ${extraPackages} embalagens restantes
+${completeLabels} - ${packagesPerPallet * Math.floor(completeLabels / packagesPerPallet)} = ${completeLabels % packagesPerPallet} embalagens restantes
 
-Total de Paletes: ${completePallets} completos${extraPackages > 0 ? ` e 1 palete incompleto com ${extraPackages} embalagens` : ''}
+Total de Paletes: ${Math.floor(completeLabels / packagesPerPallet)} completos${completeLabels % packagesPerPallet > 0 ? ` e 1 palete incompleto com ${completeLabels % packagesPerPallet} embalagens` : ''}
 
 ${totalPieces} peças distribuídas em ${totalLabels} embalagens`;
   
@@ -51,9 +50,6 @@ ${totalPieces} peças distribuídas em ${totalLabels} embalagens`;
     completeLabels,
     extraLabels,
     extraPieces,
-    totalPallets,
-    completePallets,
-    extraPackages,
     detailedCalculation
   };
 }

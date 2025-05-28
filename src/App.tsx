@@ -9,9 +9,11 @@ import Auth from './components/Auth';
 import PartsManager from './components/PartsManager';
 import AdminPanel from './components/AdminPanel';
 import PasswordManager from './components/PasswordManager';
+import Calculator from './components/Calculator';
 import { auth, db } from './services/firebase';
 import { User } from 'firebase/auth';
 import { handleUserPresence } from './services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -22,6 +24,16 @@ function App() {
       setUser(user);
       if (user) {
         handleUserPresence(user);
+        // Load default page setting
+        try {
+          const settingsDoc = await getDoc(doc(db, 'SenhaAdmin', 'SenhaAdmin'));
+          if (settingsDoc.exists()) {
+            const defaultPage = settingsDoc.data().defaultPage || 'home';
+            setCurrentPage(defaultPage);
+          }
+        } catch (error) {
+          console.error('Error loading default page setting:', error);
+        }
       }
     });
     return () => unsubscribe();
@@ -56,6 +68,8 @@ function App() {
             <RecordsTable />
           </>
         );
+      case 'calculator':
+        return <Calculator />;
       case 'parts':
         return <PartsManager />;
       case 'requests':

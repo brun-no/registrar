@@ -196,91 +196,95 @@ const LabelCalculator: React.FC = () => {
     }
   };
 
-  return (
-    <>
-      <div className={`rounded-lg p-6 mb-8 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          handleRegister();
-        }}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <AutocompleteInput
-              id="partCode"
-              label="Código da Peça"
-              value={partCode}
-              onChange={setPartCode}
-              required
-              onKeyPress={(e) => handleKeyPress(e, 'batchNumber')}
-            />
-            
-            <div className="relative">
-              <FloatingInput
-                id="batchNumber"
-                label="Número do Lote"
-                value={batchNumber}
-                onChange={(e) => setBatchNumber(e.target.value)}
-                required
-                type="text"
-                className={isBatchNumberDuplicate ? 'border-2 border-red-500' : ''}
-                onKeyPress={(e) => handleKeyPress(e, 'piecesPerPackage')}
-              />
-              {isBatchNumberDuplicate && (
-                <p className="text-red-500 text-sm mt-1">🔺 Lote já registrado anteriormente</p>
-              )}
-            </div>
-
+ return (
+  <>
+    <div className={`rounded-lg p-6 mb-8 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        handleRegister();
+      }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Primeira linha de entradas */}
+          <AutocompleteInput
+            id="partCode"
+            label="Código da Peça"
+            value={partCode}
+            onChange={setPartCode}
+            required
+            onKeyPress={(e) => handleKeyPress(e, 'batchNumber')}
+          />
+          
+          <div className="relative">
             <FloatingInput
-              id="piecesPerPackage"
-              label="Peças por Embalagem"
-              value={piecesPerPackage || ''}
-              onChange={(e) => {
-                const value = Math.max(0, Number(e.target.value));
-                setPiecesPerPackage(value);
-              }}
-              type="number"
+              id="batchNumber"
+              label="Número do Lote"
+              value={batchNumber}
+              onChange={(e) => setBatchNumber(e.target.value)}
               required
-              min="0"
-              onKeyPress={(e) => handleKeyPress(e, 'packagesPerPallet')}
-            />
-
-            <FloatingInput
-              id="packagesPerPallet"
-              label="Embalagens por Palete"
-              value={packagesPerPallet || ''}
-              onChange={(e) => {
-                const value = Math.max(0, Number(e.target.value));
-                setPackagesPerPallet(value);
-              }}
-              type="number"
-              required
-              min="0"
+              type="text"
+              className={isBatchNumberDuplicate ? 'border-2 border-red-500' : ''}
               onKeyPress={(e) => handleKeyPress(e, 'totalPieces')}
             />
-
-            <FloatingInput
-              id="totalPieces"
-              label="Total de Peças"
-              value={totalPieces || ''}
-              onChange={(e) => {
-                const value = Math.max(0, Number(e.target.value));
-                setTotalPieces(value);
-              }}
-              type="number"
-              required
-              min="0"
-              onKeyPress={(e) => handleKeyPress(e, 'notes')}
-            />
-
-            <div>
-              <FloatingInput
-                id="notes"
-                label="Observações"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, null)}
-              />
-            </div>
+            {isBatchNumberDuplicate && (
+              <p className="text-red-500 text-sm mt-1">🔺 Lote já registrado anteriormente</p>
+            )}
           </div>
+
+          <FloatingInput
+            id="totalPieces"
+            label="Total de Peças"
+            value={totalPieces || ''}
+            onChange={(e) => {
+              const value = Math.max(0, Number(e.target.value));
+              setTotalPieces(value);
+            }}
+            type="number"
+            required
+            min="0"
+            onKeyPress={(e) => handleKeyPress(e, 'piecesPerPackage')}
+          />
+
+          {/* Segunda linha de entradas */}
+          <FloatingInput
+            id="piecesPerPackage"
+            label="Peças por Embalagem"
+            value={piecesPerPackage || ''}
+            onChange={(e) => {
+              const value = Math.max(0, Number(e.target.value));
+              setPiecesPerPackage(value);
+            }}
+            type="number"
+            required
+            min="0"
+            onKeyPress={(e) => handleKeyPress(e, 'packagesPerPallet')}
+          />
+
+          <FloatingInput
+            id="packagesPerPallet"
+            label="Embalagens por Palete"
+            value={packagesPerPallet || ''}
+            onChange={(e) => {
+              const value = Math.max(0, Number(e.target.value));
+              setPackagesPerPallet(value);
+            }}
+            type="number"
+            required
+            min="0"
+            onKeyPress={(e) => handleKeyPress(e, 'notes')}
+          />
+
+          <div>
+            <FloatingInput
+              id="notes"
+              label="Observações"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onKeyPress={(e) => handleKeyPress(e, null)}
+            />
+          </div>
+        </div>
+   
+
 
           <div className="mt-6 flex items-center space-x-6">
             <button

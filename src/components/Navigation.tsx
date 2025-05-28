@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useAdmin } from '../context/AdminContext';
-import { Home, Package, UserPlus, Key } from 'lucide-react';
+import { Home, Package, UserPlus, Settings, Calculator } from 'lucide-react';
 
 interface NavigationProps {
   currentPage: string;
@@ -13,10 +13,11 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChange }) =>
   const { isAdmin } = useAdmin();
 
   const navItems = [
-    { id: 'home', label: 'HOME', icon: Home, adminOnly: false },
+    { id: 'home', label: 'REGISTROS', icon: Home, adminOnly: false },
+    { id: 'calculator', label: 'CALCULADORA', icon: Calculator, adminOnly: false },
     { id: 'parts', label: 'PEÇAS', icon: Package, adminOnly: true },
     { id: 'requests', label: 'SOLICITAÇÕES', icon: UserPlus, adminOnly: true },
-    { id: 'password', label: 'SENHAS', icon: Key, adminOnly: true },
+    { id: 'password', label: 'ADMINISTRAÇÕES', icon: Settings, adminOnly: true },
   ];
 
   // Filter items based on admin status
