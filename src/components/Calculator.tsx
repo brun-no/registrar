@@ -25,7 +25,6 @@ const Calculator: React.FC = () => {
   };
 
   useEffect(() => {
-    // Focus the first input field on component mount
     if (piecesPerPackageRef.current) {
       piecesPerPackageRef.current.focus();
     }
@@ -41,10 +40,10 @@ const Calculator: React.FC = () => {
   }, [totalPieces, piecesPerPackage]);
 
   return (
-    <div className={`rounded-lg p-6 mb-8 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <h2 className="text-2xl font-bold mb-6">Calculadora de Etiquetas</h2>
+    <div className={`rounded-lg p-8 mb-8 shadow-md max-w-4xl mx-auto ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <h2 className="text-3xl font-bold mb-8 text-center">Calculadora de Etiquetas</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-2 gap-8 mb-8">
         <FloatingInput
           id="totalPieces"
           label="Total de Peças"
@@ -58,9 +57,10 @@ const Calculator: React.FC = () => {
           min="0"
           onKeyPress={(e) => handleKeyPress(e, 'totalPieces')}
           ref={totalPiecesRef}
+          size="large"
         />
 
-      <FloatingInput
+        <FloatingInput
           id="piecesPerPackage"
           label="Peças por Embalagem"
           value={piecesPerPackage || ''}
@@ -73,11 +73,11 @@ const Calculator: React.FC = () => {
           min="0"
           onKeyPress={(e) => handleKeyPress(e, 'piecesPerPackage')}
           ref={piecesPerPackageRef}
+          size="large"
         />
+      </div>
 
-         </div>
-
-      <div className="mb-6">
+      <div className="mb-8">
         <Switch
           id="showDetailedCalc"
           label="Cálculos Detalhados"
@@ -87,28 +87,23 @@ const Calculator: React.FC = () => {
       </div>
 
       {calculations && (
-        <div className={`mt-6 p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-          <h3 className="text-lg font-semibold mb-4">Resultados do Cálculo:</h3>
-          
-          {!showDetailedCalc && (
-            <div className="space-y-2">
-              <p className="text-xl font-bold">
-                Total de Etiquetas: {calculations.totalLabels}
-                {calculations.extraPieces > 0 && ` (${calculations.completeLabels} completas + 1 extra com ${calculations.extraPieces} peças)`}
-              </p>
-              <p className="flex items-center space-x-2">
-                <span>Peças Extras: {calculations.extraPieces}</span>
-              </p>
-            </div>
-          )}
+        <div className={`mt-8 p-8 rounded-lg ${darkMode ? 'bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50'}`}>
+          <div className={`p-6 rounded-lg ${
+            darkMode ? 'bg-blue-800/50 backdrop-blur-sm' : 'bg-white/50 backdrop-blur-sm'
+          } shadow-xl`}>
+            <h3 className="text-3xl font-bold mb-4">
+              Total de Etiquetas Necessárias: {calculations.totalLabels}
+              {calculations.extraPieces > 0 && (
+                <span className="block text-2xl mt-2 opacity-90">
+                  ({calculations.completeLabels} completas + 1 extra com {calculations.extraPieces} peças)
+                </span>
+              )}
+            </h3>
+          </div>
 
           {showDetailedCalc && (
-            <div className="space-y-4">
-              <p className="text-xl font-bold">
-                Total de Etiquetas Necessárias: {calculations.totalLabels}
-                {calculations.extraPieces > 0 && ` (${calculations.completeLabels} completas + 1 extra com ${calculations.extraPieces} peças)`}
-              </p>
-              <div className="whitespace-pre-wrap font-mono text-sm">
+            <div className="mt-8 p-6 rounded-lg bg-black/10">
+              <div className="whitespace-pre-wrap font-mono text-lg">
                 {calculations.detailedCalculation}
               </div>
             </div>

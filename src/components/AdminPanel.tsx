@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { db, auth } from '../services/firebase';
+import { db, realtimeDb } from '../services/firebase';
 import { collection, query, getDocs, doc, setDoc, deleteDoc, where } from 'firebase/firestore';
+import { ref, onValue } from 'firebase/database';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
+import { Users, UserPlus, UserX } from 'lucide-react';
 
 interface User {
   id: string;
@@ -12,33 +14,60 @@ interface User {
   status: 'pending' | 'approved';
 }
 
+interface OnlineUser {
+  email: string;
+  timestamp: string;
+}
+
+const ADMIN_EMAIL = 'uptecbrasilqualidade@gmail.com';
+
 const AdminPanel: React.FC = () => {
   const { darkMode } = useTheme();
   const [users, setUsers] = useState<User[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     loadUsers();
+    
+    const connectionsRef = ref(realtimeDb, 'connections');
+    const unsubscribe = onValue(connectionsRef, (snapshot) => {
+      const connections: OnlineUser[] = [];
+      snapshot.forEach((childSnapshot) => {
+        connections.push(childSnapshot.val());
+      });
+      setOnlineUsers(connections);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const loadUsers = async () => {
     try {
-      const q = query(collection(db, 'pendingUsers'));
-      const snapshot = await getDocs(q);
-      const users = snapshot.docs.map(doc => ({
+      const pendingQuery = query(collection(db, 'pendingUsers'));
+      const pendingSnapshot = await getDocs(pendingQuery);
+      const pendingUsers = pendingSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as User[];
+
+      const usersQuery = query(collection(db, 'users'));
+      const usersSnapshot = await getDocs(usersQuery);
+      const approvedUsers = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        status: 'approved'
+      })) as User[];
       
-      // Sort users by status (pending first) and then by date
-      users.sort((a, b) => {
+      const allUsers = [...pendingUsers, ...approvedUsers];
+      allUsers.sort((a, b) => {
         if (a.status === 'pending' && b.status !== 'pending') return -1;
         if (a.status !== 'pending' && b.status === 'pending') return 1;
         return new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime();
       });
       
-      setUsers(users);
+      setUsers(allUsers);
     } catch (error) {
       console.error('Error loading users:', error);
       setError('Erro ao carregar usuários');
@@ -52,32 +81,26 @@ const AdminPanel: React.FC = () => {
       setLoading(true);
       setError('');
 
-      // Check if email already exists in Firebase Auth
       const methods = await fetchSignInMethodsForEmail(auth, user.email);
       if (methods.length > 0) {
-        // Update status in pendingUsers if user already exists
         await setDoc(doc(db, 'pendingUsers', user.id), {
           ...user,
           status: 'approved'
         });
       } else {
-        // Create user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, user.email, user.password);
         
-        // Add user to users collection
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           email: user.email,
           approvedAt: new Date().toISOString()
         });
         
-        // Update status in pendingUsers
         await setDoc(doc(db, 'pendingUsers', user.id), {
           ...user,
           status: 'approved'
         });
       }
       
-      // Refresh list
       await loadUsers();
     } catch (error: any) {
       console.error('Error approving user:', error);
@@ -88,20 +111,22 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleDelete = async (user: User) => {
+    // Prevent deletion of admin account
+    if (user.email === ADMIN_EMAIL) {
+      setError('Não é possível excluir a conta de administrador');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
 
-      // If user is approved, we need to delete from Firebase Auth
       if (user.status === 'approved') {
         try {
-          // Sign in as the user to get their auth object
           const userCredential = await signInWithEmailAndPassword(auth, user.email, user.password);
           
-          // Delete the user from Firebase Auth
           await deleteUser(userCredential.user);
           
-          // Delete from users collection if exists
           const usersQuery = query(collection(db, 'users'), where('email', '==', user.email));
           const usersSnapshot = await getDocs(usersQuery);
           
@@ -115,10 +140,10 @@ const AdminPanel: React.FC = () => {
         }
       }
 
-      // Delete from pendingUsers collection
-      await deleteDoc(doc(db, 'pendingUsers', user.id));
+      if (user.id) {
+        await deleteDoc(doc(db, 'pendingUsers', user.id));
+      }
       
-      // Refresh the users list
       await loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -138,6 +163,38 @@ const AdminPanel: React.FC = () => {
 
   return (
     <div className={`p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Usuários Online</h2>
+        <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+          <div className="flex items-center mb-4">
+            <Users className="mr-2" />
+            <span className="text-lg font-semibold">Total Online: {onlineUsers.length}</span>
+          </div>
+          <div className="space-y-2">
+            {onlineUsers.map((user, index) => (
+              <div
+                key={index}
+                className={`p-3 rounded-lg ${
+                  darkMode ? 'bg-gray-800' : 'bg-white'
+                } ${user.email === ADMIN_EMAIL ? 'border-l-4 border-green-500' : ''}`}
+              >
+                <p className="font-medium">
+                  {user.email}
+                  {user.email === ADMIN_EMAIL && (
+                    <span className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded-full">
+                      Admin
+                    </span>
+                  )}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Conectado desde: {new Date(user.timestamp).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <h2 className="text-2xl font-bold mb-6">Gerenciamento de Usuários</h2>
       
       {error && (
@@ -155,13 +212,22 @@ const AdminPanel: React.FC = () => {
               key={user.id}
               className={`p-4 rounded-lg border ${
                 darkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}
+              } ${user.email === ADMIN_EMAIL ? 'border-l-4 border-green-500' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{user.email}</p>
+                  <p className="font-medium">
+                    {user.email}
+                    {user.email === ADMIN_EMAIL && (
+                      <span className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded-full">
+                        Admin
+                      </span>
+                    )}
+                  </p>
                   <p className="text-sm text-gray-500">
-                    Solicitado em: {new Date(user.requestDate).toLocaleString()}
+                    {user.status === 'approved' 
+                      ? 'Aprovado em: ' 
+                      : 'Solicitado em: '}{new Date(user.requestDate).toLocaleString()}
                   </p>
                   <p className={`text-sm font-medium ${user.status === 'approved' ? 'text-green-500' : 'text-yellow-500'}`}>
                     Status: {user.status === 'approved' ? 'Aprovado' : 'Pendente'}
@@ -171,17 +237,21 @@ const AdminPanel: React.FC = () => {
                   {user.status === 'pending' && (
                     <button
                       onClick={() => handleApprove(user)}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center"
                     >
+                      <UserPlus size={18} className="mr-2" />
                       Aprovar
                     </button>
                   )}
-                  <button
-                    onClick={() => handleDelete(user)}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    Excluir
-                  </button>
+                  {user.email !== ADMIN_EMAIL && (
+                    <button
+                      onClick={() => handleDelete(user)}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center"
+                    >
+                      <UserX size={18} className="mr-2" />
+                      Excluir
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

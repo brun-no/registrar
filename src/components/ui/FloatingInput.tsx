@@ -13,6 +13,7 @@ interface FloatingInputProps {
   readOnly?: boolean;
   className?: string;
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  size?: 'normal' | 'large';
 }
 
 export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(({
@@ -26,10 +27,19 @@ export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(({
   onBlur,
   readOnly = false,
   className = '',
-  onKeyPress
+  onKeyPress,
+  size = 'normal'
 }, ref) => {
   const { darkMode } = useTheme();
   const isNotEmpty = value !== '' && value !== 0;
+
+  const inputSizeClasses = size === 'large' 
+    ? 'px-6 py-4 text-2xl' 
+    : 'px-4 py-2 text-base';
+
+  const labelSizeClasses = size === 'large'
+    ? 'text-xl'
+    : 'text-sm';
 
   return (
     <div className="relative">
@@ -45,7 +55,8 @@ export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(({
         onKeyPress={onKeyPress}
         readOnly={readOnly}
         className={`
-          block w-full px-4 py-2.5 text-base
+          block w-full
+          ${inputSizeClasses}
           border rounded-lg
           transition-all duration-200 ease-in-out
           focus:outline-none focus:ring-2
@@ -63,19 +74,19 @@ export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(({
       <label
         htmlFor={id}
         className={`
-          absolute text-sm
+          absolute ${labelSizeClasses}
           transition-all duration-200 ease-in-out
           transform
           cursor-text
           ${isNotEmpty 
-            ? 'top-0 translate-y-[-50%] scale-75 px-2 left-3 z-10' 
-            : 'top-1/2 -translate-y-1/2 left-4'
+            ? 'top-0 translate-y-[-50%] scale-75 px-2 left-4 z-10' 
+            : size === 'large' ? 'top-1/2 -translate-y-1/2 left-6' : 'top-1/2 -translate-y-1/2 left-4'
           }
           ${darkMode 
             ? `text-gray-300 ${isNotEmpty ? 'bg-gray-700' : ''} peer-focus:text-blue-400 peer-focus:bg-gray-700` 
             : `text-gray-500 ${isNotEmpty ? 'bg-white' : ''} peer-focus:text-blue-600 peer-focus:bg-white`
           }
-          peer-focus:top-0 peer-focus:translate-y-[-50%] peer-focus:scale-75 peer-focus:px-2 peer-focus:left-3
+          peer-focus:top-0 peer-focus:translate-y-[-50%] peer-focus:scale-75 peer-focus:px-2 peer-focus:left-4
         `}
       >
         {label}{required && ' *'}
